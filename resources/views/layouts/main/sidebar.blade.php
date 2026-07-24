@@ -9,7 +9,7 @@
     >
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="sidebarMenuLabel">
-                Agape Community
+                Agape Community | {{ auth()->user()->name }} - Mobile
             </h5>
 
             <button

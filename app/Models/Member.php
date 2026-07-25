@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Models;
+
+use App\Enums\Gender;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -14,6 +16,7 @@ class Member extends Model
     protected function casts(): array
     {
         return [
+            'gender' => Gender::class,
             'is_active' => 'boolean',
         ];
     }

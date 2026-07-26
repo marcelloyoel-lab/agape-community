@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Member;
 use App\Services\MemberService;
 use Illuminate\Http\Request;
+use App\Http\Requests\StoreMemberRequest;
+use Illuminate\Http\RedirectResponse;
 
 class MemberController extends Controller
 {
@@ -27,15 +29,26 @@ class MemberController extends Controller
      */
     public function create()
     {
-        //
+        return view('member.create');
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreMemberRequest $request): RedirectResponse
     {
-        //
+        try {
+            $this->memberService->create($request->validated());
+
+            return redirect()
+                ->route('members.index')
+                ->with('success', 'Member created successfully.');
+
+        } catch (\Throwable $exception) {
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to create member. Please try again.');
+        }
     }
 
     /**

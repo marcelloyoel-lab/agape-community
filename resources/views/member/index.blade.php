@@ -1,7 +1,6 @@
 @extends('layouts.main.app')
 
 @section('content')
-@vite('resources/assets/js/member/index.js')
 <div class="container-fluid">
 
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -36,11 +35,11 @@
 
                                 <td>
                                     @if ($member->is_active)
-                                        <span class="badge bg-label-success">
+                                        <span class="badge bg-success">
                                             Active
                                         </span>
                                     @else
-                                        <span class="badge bg-label-danger">
+                                        <span class="badge bg-danger">
                                             Inactive
                                         </span>
                                     @endif
@@ -81,4 +80,4 @@
 </div>
 @endsection
 
-@vite('resources/js/member/index.js')
+@vite('resources/assets/js/member/index.js')

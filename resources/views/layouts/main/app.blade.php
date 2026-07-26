@@ -24,6 +24,7 @@
             @include('layouts.main.sidebar')
 
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-3">
+                @include('components.app.alert')
                 @yield('content')
             </main>
 

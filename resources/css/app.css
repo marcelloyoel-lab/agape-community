@@ -1,3 +1,8 @@
 @import "bootstrap/dist/css/bootstrap.min.css";
 @import "../assets/css/dashboard.css";
 @import "bootstrap-icons/font/bootstrap-icons.css";
+
+.select2-container--default .select2-results > .select2-results__options {
+    max-height: 250px;
+    overflow-y: auto;
+}

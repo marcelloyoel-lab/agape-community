@@ -31,6 +31,10 @@ Route::middleware('auth')->group(function () {
     )->name('members.update-status');
     Route::resource('members', MemberController::class);
 
+    Route::patch(
+        '/ministries/{ministry}/status',
+        [MinistryController::class, 'toggleStatus']
+    )->name('ministries.toggle-status');
     Route::resource('ministries', MinistryController::class);
         
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

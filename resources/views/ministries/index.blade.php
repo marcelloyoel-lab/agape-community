@@ -67,12 +67,50 @@
                                     @endif
                                 </td>
 
-                                <td>
-                                    <a href="{{ route('ministries.edit', $ministry) }}"
-                                    class="btn btn-sm btn-warning">
-                                        <i class="bi bi-pencil"></i>
-                                        Edit
-                                    </a>
+                                <td class="text-nowrap">
+                                    <div class="d-flex align-items-center gap-2">
+
+                                        <a
+                                            href="{{ route('ministries.edit', $ministry) }}"
+                                            class="btn btn-sm btn-outline-primary"
+                                            title="Edit ministry"
+                                        >
+                                            <i class="bi bi-pencil me-1"></i>
+                                            Edit
+                                        </a>
+
+                                        <form
+                                            action="{{ route('ministries.toggle-status', $ministry) }}"
+                                            method="POST"
+                                            class="ministry-status-form m-0"
+                                        >
+                                            @csrf
+                                            @method('PATCH')
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm {{ $ministry->is_active
+                                                    ? 'btn-outline-secondary'
+                                                    : 'btn-outline-success' }}"
+                                            >
+                                                <i class="bi {{ $ministry->is_active
+                                                    ? 'bi-pause-circle'
+                                                    : 'bi-check-circle' }} me-1"></i>
+
+                                                {{ $ministry->is_active ? 'Deactivate' : 'Activate' }}
+                                            </button>
+                                        </form>
+
+                                        <button
+                                            type="button"
+                                            class="btn btn-sm btn-outline-danger"
+                                            title="Delete ministry"
+                                            aria-label="Delete {{ $ministry->name }}"
+                                        >
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
@@ -83,3 +121,5 @@
     </div>
 </div>
 @endsection
+
+@vite('resources/assets/js/ministries/index.js')

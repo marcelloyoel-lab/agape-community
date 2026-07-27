@@ -93,6 +93,25 @@ class MinistryController extends Controller
         }
     }
 
+    public function toggleStatus(Ministry $ministry): RedirectResponse
+    {
+        try {
+            $ministry = $this->ministryService->toggleStatus($ministry);
+
+            $status = $ministry->is_active
+                ? 'activated'
+                : 'deactivated';
+
+            return redirect()
+                ->route('ministries.index')
+                ->with('success', "Ministry {$status} successfully.");
+        } catch (Throwable $e) {
+            return redirect()
+                ->route('ministries.index')
+                ->with('error', 'Failed to update ministry status. Please try again.');
+        }
+    }
+
     /**
      * Remove the specified resource from storage.
      */

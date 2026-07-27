@@ -74,4 +74,35 @@ class MinistryService
             throw $e;
         }
     }
+
+    public function toggleStatus(Ministry $ministry): Ministry
+    {
+        DB::beginTransaction();
+
+        try {
+            $ministry->update([
+                'is_active' => ! $ministry->is_active,
+            ]);
+
+            DB::commit();
+
+            Log::info('Ministry status updated successfully.', [
+                'ministry_id' => $ministry->id,
+                'is_active' => $ministry->is_active,
+                'edited_by' => auth()->id(),
+            ]);
+
+            return $ministry;
+        } catch (Throwable $e) {
+            DB::rollBack();
+
+            Log::error('Failed to update ministry status.', [
+                'ministry_id' => $ministry->id,
+                'edited_by' => auth()->id(),
+                'error' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
+    }
 }

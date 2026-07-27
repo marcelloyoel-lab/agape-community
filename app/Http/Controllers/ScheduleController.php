@@ -18,7 +18,7 @@ class ScheduleController extends Controller
             ->latest('service_date')
             ->get();
 
-        return view('schedules.index', compact('schedules'));
+        return view('schedule.index', compact('schedules'));
     }
 
     /**

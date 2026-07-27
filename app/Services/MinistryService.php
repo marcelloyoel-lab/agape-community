@@ -105,4 +105,38 @@ class MinistryService
             throw $e;
         }
     }
+
+    public function delete(Ministry $ministry): void
+    {
+        DB::beginTransaction();
+
+        try {
+            if ($ministry->scheduleAssignments()->exists()) {
+                throw new \DomainException(
+                    'Ministries used in schedules cannot be deleted. Deactivate it instead.'
+                );
+            }
+
+            $ministryId = $ministry->id;
+
+            $ministry->delete();
+
+            DB::commit();
+
+            Log::info('Ministry deleted successfully.', [
+                'ministry_id' => $ministryId,
+                'deleted_by' => auth()->id(),
+            ]);
+        } catch (Throwable $e) {
+            DB::rollBack();
+
+            Log::error('Failed to delete ministry.', [
+                'ministry_id' => $ministry->id,
+                'deleted_by' => auth()->id(),
+                'error' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
+    }
 }

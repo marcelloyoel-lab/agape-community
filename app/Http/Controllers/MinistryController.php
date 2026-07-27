@@ -117,6 +117,20 @@ class MinistryController extends Controller
      */
     public function destroy(Ministry $ministry)
     {
-        //
+        try {
+            $this->ministryService->delete($ministry);
+
+            return redirect()
+                ->route('ministries.index')
+                ->with('success', 'Ministry deleted successfully.');
+        } catch (\DomainException $e) {
+            return redirect()
+                ->route('ministries.index')
+                ->with('error', $e->getMessage());
+        } catch (Throwable $e) {
+            return redirect()
+                ->route('ministries.index')
+                ->with('error', 'Failed to delete ministry. Please try again.');
+        }
     }
 }

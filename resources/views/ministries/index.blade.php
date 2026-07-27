@@ -1,6 +1,8 @@
 @extends('layouts.main.app')
 
 @section('content')
+@vite('resources/assets/css/ministries/index.css')
+
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -72,7 +74,7 @@
 
                                         <a
                                             href="{{ route('ministries.edit', $ministry) }}"
-                                            class="btn btn-sm btn-outline-primary"
+                                            class="btn btn-sm btn-outline-primary action-edit"
                                             title="Edit ministry"
                                         >
                                             <i class="bi bi-pencil me-1"></i>
@@ -89,9 +91,10 @@
 
                                             <button
                                                 type="submit"
-                                                class="btn btn-sm {{ $ministry->is_active
-                                                    ? 'btn-outline-secondary'
-                                                    : 'btn-outline-success' }}"
+                                                class="btn btn-sm action-status
+                                                    {{ $ministry->is_active
+                                                        ? 'btn-outline-secondary'
+                                                        : 'btn-outline-success' }}"
                                             >
                                                 <i class="bi {{ $ministry->is_active
                                                     ? 'bi-pause-circle'
@@ -101,14 +104,22 @@
                                             </button>
                                         </form>
 
-                                        <button
-                                            type="button"
-                                            class="btn btn-sm btn-outline-danger"
-                                            title="Delete ministry"
-                                            aria-label="Delete {{ $ministry->name }}"
+                                        <form
+                                            action="{{ route('ministries.destroy', $ministry) }}"
+                                            method="POST"
+                                            class="ministry-delete-form m-0"
                                         >
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                                            @csrf
+                                            @method('DELETE')
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm btn-outline-danger action-delete"
+                                                title="Delete ministry"
+                                            >
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
 
                                     </div>
                                 </td>

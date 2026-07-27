@@ -20,4 +20,26 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
         });
     });
+
+    document.querySelectorAll(".ministry-delete-form").forEach((form) => {
+        form.addEventListener("submit", (event) => {
+            const ministryName = form.dataset.ministryName;
+
+            const confirmed = window.confirm(
+                `Are you sure you want to delete "${ministryName}"?`,
+            );
+
+            if (!confirmed) {
+                event.preventDefault();
+                return;
+            }
+
+            const button = form.querySelector('button[type="submit"]');
+
+            button.disabled = true;
+            button.innerHTML = `
+                <span class="spinner-border spinner-border-sm"></span>
+            `;
+        });
+    });
 });

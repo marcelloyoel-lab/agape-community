@@ -52,4 +52,41 @@ class MemberService
             throw $exception;
         }
     }
+
+    public function update(Member $member, array $data): Member
+    {
+        DB::beginTransaction();
+
+        try {
+            $member->update([
+                'name' => $data['name'],
+                'gender' => $data['gender'],
+                'phone_number' => $data['phone_number'] ?? null,
+                'is_active' => $data['is_active'],
+            ]);
+
+            DB::commit();
+
+            Log::info('Member updated successfully.', [
+                'member_id' => $member->id,
+                'member_name' => $member->name,
+                'edited_by' => auth()->id(),
+            ]);
+
+            return $member;
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+
+            Log::error('Failed to update member.', [
+                'member_id' => $member->id,
+                'edited_by' => auth()->id(),
+                'exception' => get_class($exception),
+                'message' => $exception->getMessage(),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+            ]);
+
+            throw $exception;
+        }
+    }
 }

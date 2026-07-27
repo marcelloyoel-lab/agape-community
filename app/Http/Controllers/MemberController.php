@@ -6,6 +6,7 @@ use App\Models\Member;
 use App\Services\MemberService;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreMemberRequest;
+use App\Http\Requests\UpdateMemberRequest;
 use Illuminate\Http\RedirectResponse;
 
 class MemberController extends Controller
@@ -64,15 +65,30 @@ class MemberController extends Controller
      */
     public function edit(Member $member)
     {
-        //
+        return view('member.edit', compact('member'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Member $member)
-    {
-        //
+    public function update(
+        UpdateMemberRequest $request,
+        Member $member
+    ): RedirectResponse {
+        try {
+            $this->memberService->update(
+                $member,
+                $request->validated()
+            );
+
+            return redirect()
+                ->route('members.index')
+                ->with('success', 'Member updated successfully.');
+        } catch (\Throwable $exception) {
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to update member. Please try again.');
+        }
     }
 
     /**

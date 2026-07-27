@@ -89,4 +89,41 @@ class MemberService
             throw $exception;
         }
     }
+
+    public function updateStatus(Member $member, bool $isActive): Member
+    {
+        DB::beginTransaction();
+
+        try {
+            $member->update([
+                'is_active' => $isActive,
+            ]);
+
+            DB::commit();
+
+            Log::info('Member status updated successfully.', [
+                'member_id' => $member->id,
+                'member_name' => $member->name,
+                'status' => $isActive ? 'active' : 'inactive',
+                'edited_by' => auth()->id(),
+            ]);
+
+            return $member;
+
+        } catch (\Throwable $exception) {
+            DB::rollBack();
+
+            Log::error('Failed to update member status.', [
+                'member_id' => $member->id,
+                'target_status' => $isActive ? 'active' : 'inactive',
+                'edited_by' => auth()->id(),
+                'exception' => get_class($exception),
+                'message' => $exception->getMessage(),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+            ]);
+
+            throw $exception;
+        }
+    }
 }

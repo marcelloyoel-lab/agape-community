@@ -23,6 +23,11 @@ Route::get('/dashboard', function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::patch(
+        '/members/{member}/status',
+        [MemberController::class, 'updateStatus']
+    )->name('members.update-status');
     Route::resource('members', MemberController::class);
         
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

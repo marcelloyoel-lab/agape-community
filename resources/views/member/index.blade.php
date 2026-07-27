@@ -7,7 +7,6 @@
         <h4 class="mb-0">Member Management</h4>
 
         <a href="{{ route('members.create') }}" class="btn btn-primary">
-            <i class="bx bx-plus"></i>
             Add Member
         </a>
     </div>
@@ -46,31 +45,32 @@
                                 </td>
 
                                 <td>
-                                    <a
-                                        href="{{ route('members.edit', $member) }}"
-                                        class="btn btn-sm btn-warning"
-                                    >
-                                        Edit
-                                    </a>
+                                    <div class="d-flex gap-2">
 
-                                    @if ($member->is_active)
-                                        <button
-                                            class="btn btn-sm btn-danger"
+                                        <a
+                                            href="{{ route('members.edit', $member) }}"
+                                            class="btn btn-sm btn-warning"
                                         >
-                                            Deactivate
-                                        </button>
-                                    @else
+                                            Edit
+                                        </a>
+
                                         <button
-                                            class="btn btn-sm btn-success"
+                                            type="button"
+                                            class="btn btn-sm {{ $member->is_active ? 'btn-danger' : 'btn-success' }} js-status-button"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#statusModal"
+                                            data-member-name="{{ $member->name }}"
+                                            data-status="{{ $member->is_active ? '0' : '1' }}"
+                                            data-action="{{ route('members.update-status', $member) }}"
                                         >
-                                            Activate
+                                            {{ $member->is_active ? 'Deactivate' : 'Activate' }}
                                         </button>
-                                    @endif
+
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
                     </tbody>
-
                 </table>
             </div>
 
@@ -78,6 +78,69 @@
     </div>
 
 </div>
+
+
+{{-- Status Confirmation Modal --}}
+<div
+    class="modal fade"
+    id="statusModal"
+    tabindex="-1"
+    aria-labelledby="statusModalLabel"
+    aria-hidden="true"
+>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="statusModalLabel">
+                    Confirm Status Change
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-0" id="statusModalMessage"></p>
+            </div>
+
+            <div class="modal-footer">
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                >
+                    Cancel
+                </button>
+
+                <form id="statusForm" method="POST">
+                    @csrf
+                    @method('PATCH')
+
+                    <input
+                        type="hidden"
+                        name="is_active"
+                        id="statusInput"
+                    >
+
+                    <button
+                        type="submit"
+                        class="btn"
+                        id="statusConfirmButton"
+                    >
+                        Confirm
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @vite('resources/assets/js/member/index.js')

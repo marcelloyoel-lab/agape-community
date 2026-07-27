@@ -7,6 +7,7 @@ use App\Services\MemberService;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreMemberRequest;
 use App\Http\Requests\UpdateMemberRequest;
+use App\Http\Requests\UpdateMemberStatusRequest;
 use Illuminate\Http\RedirectResponse;
 
 class MemberController extends Controller
@@ -97,5 +98,30 @@ class MemberController extends Controller
     public function destroy(Member $member)
     {
         //
+    }
+
+    public function updateStatus(
+        UpdateMemberStatusRequest $request,
+        Member $member
+    ): RedirectResponse {
+        try {
+            $this->memberService->updateStatus(
+                $member,
+                $request->boolean('is_active')
+            );
+
+            $status = $request->boolean('is_active')
+                ? 'activated'
+                : 'deactivated';
+
+            return redirect()
+                ->route('members.index')
+                ->with('success', "Member successfully {$status}.");
+
+        } catch (\Throwable $exception) {
+            return redirect()
+                ->route('members.index')
+                ->with('error', 'Failed to update member status. Please try again.');
+        }
     }
 }

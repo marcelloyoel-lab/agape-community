@@ -15,7 +15,8 @@ return new class extends Migration
         Schema::create('schedules', function (Blueprint $table) {
             $table->id();
 
-            $table->date('service_date')->unique();
+            $table->date('service_date');
+            $table->time('service_time');
 
             $table->enum('status', array_column(
                 ScheduleStatus::cases(),
@@ -34,6 +35,11 @@ return new class extends Migration
             $table->timestamp('published_at')->nullable();
 
             $table->timestamps();
+            
+            $table->unique([
+                'service_date',
+                'service_time',
+            ]);
         });
     }
 

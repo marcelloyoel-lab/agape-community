@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMinistryRequest;
+use App\Http\Requests\UpdateMinistryRequest;
 use App\Models\Ministry;
 use App\Services\MinistryService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Throwable;
 
@@ -65,15 +67,30 @@ class MinistryController extends Controller
      */
     public function edit(Ministry $ministry)
     {
-        //
+        return view('ministries.edit', compact('ministry'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Ministry $ministry)
-    {
-        //
+    public function update(
+        UpdateMinistryRequest $request,
+        Ministry $ministry
+    ): RedirectResponse {
+        try {
+            $this->ministryService->update(
+                $ministry,
+                $request->validated()
+            );
+
+            return redirect()
+                ->route('ministries.index')
+                ->with('success', 'Ministry updated successfully.');
+        } catch (Throwable $e) {
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to update ministry. Please try again.');
+        }
     }
 
     /**

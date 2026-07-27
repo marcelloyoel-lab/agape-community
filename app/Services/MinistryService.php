@@ -42,4 +42,36 @@ class MinistryService
             throw $e;
         }
     }
+
+    public function update(Ministry $ministry, array $data): Ministry
+    {
+        DB::beginTransaction();
+
+        try {
+            $ministry->update([
+                'name' => $data['name'],
+                'allow_multiple_members' => $data['allow_multiple_members'],
+                'is_active' => $data['is_active'],
+            ]);
+
+            DB::commit();
+
+            Log::info('Ministry updated successfully.', [
+                'ministry_id' => $ministry->id,
+                'edited_by' => auth()->id(),
+            ]);
+
+            return $ministry;
+        } catch (Throwable $e) {
+            DB::rollBack();
+
+            Log::error('Failed to update ministry.', [
+                'ministry_id' => $ministry->id,
+                'edited_by' => auth()->id(),
+                'error' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
+    }
 }

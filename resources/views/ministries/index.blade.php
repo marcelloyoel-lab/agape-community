@@ -69,7 +69,7 @@
 
                                 <td>
                                     <a href="{{ route('ministries.edit', $ministry) }}"
-                                    class="btn btn-sm btn-warning disabled">
+                                    class="btn btn-sm btn-warning">
                                         <i class="bi bi-pencil"></i>
                                         Edit
                                     </a>

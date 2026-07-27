@@ -36,7 +36,7 @@
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link d-flex align-items-center gap-2" href="/schedule">
+                    <a class="nav-link d-flex align-items-center gap-2" href="/schedules">
                         Schedule
                     </a>
                 </li>

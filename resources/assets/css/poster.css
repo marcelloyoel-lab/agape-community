@@ -1,0 +1,239 @@
+@font-face {
+    font-family: "PosterFallback";
+    src: local("Arial");
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+    background: #222;
+}
+
+.poster {
+    position: relative;
+
+    width: 1920px;
+    height: 1080px;
+
+    overflow: hidden;
+
+    background-image: url("../poster/template.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100% 100%;
+
+    font-family: Arial, sans-serif;
+    color: #292721;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Service Date
+|--------------------------------------------------------------------------
+*/
+
+.poster__date {
+    position: absolute;
+    top: 220px;
+    right: 150px;
+
+    display: flex;
+    align-items: center;
+    gap: 18px;
+
+    font-family: Arial, sans-serif;
+    color: #292721;
+    white-space: nowrap;
+}
+
+.poster__day {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 3px;
+}
+
+.poster__date-value {
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+.poster__separator {
+    width: 45px;
+    height: 3px;
+    background: currentColor;
+}
+
+.poster__time {
+    font-size: 40px;
+    font-weight: 800;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Timeline
+|--------------------------------------------------------------------------
+*/
+
+.timeline__horizontal {
+    position: absolute;
+
+    top: 635px;
+    left: 96px;
+
+    width: 1660px;
+    height: 3px;
+
+    background: #292721;
+}
+
+.timeline__point {
+    position: absolute;
+
+    top: 625px;
+
+    width: 23px;
+    height: 23px;
+
+    border-radius: 50%;
+    background: #292721;
+}
+
+.timeline__point--mc {
+    left: 490px;
+}
+
+.timeline__point--firman {
+    left: 815px;
+}
+
+.timeline__point--music {
+    left: 1007px;
+}
+
+.timeline__point--multimedia {
+    left: 1332px;
+}
+
+.timeline__vertical {
+    position: absolute;
+
+    left: 10px;
+
+    width: 3px;
+
+    background: #292721;
+}
+
+.timeline__vertical--up {
+    bottom: 11px;
+    height: 270px;
+}
+
+.timeline__vertical--down {
+    top: 11px;
+    height: 270px;
+}
+
+.timeline__arrow {
+    position: absolute;
+
+    top: 617px;
+    left: 1754px;
+
+    width: 0;
+    height: 0;
+
+    border-top: 21px solid transparent;
+    border-bottom: 21px solid transparent;
+    border-left: 40px solid #292721;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Assignments
+|--------------------------------------------------------------------------
+*/
+
+.assignment {
+    position: absolute;
+    margin: 0;
+}
+
+.assignment__ministry,
+.assignment__members {
+    margin: 0;
+}
+
+.assignment__ministry {
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+/* .assignment__members {
+    margin-top: 5px;
+
+    font-size: 29px;
+    font-weight: 700;
+    line-height: 1.1;
+} */
+
+.assignment__members {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    margin: 5px 0 0;
+    padding: 0;
+
+    list-style: none;
+
+    font-size: 27px;
+    font-weight: 600;
+    line-height: 1.05;
+
+    text-transform: uppercase;
+}
+
+.assignment__members li {
+    margin: 0;
+    padding: 0;
+}
+
+.assignment--firman {
+    top: 385px;
+    left: 580px;
+
+    width: 220px;
+}
+
+.assignment--multimedia {
+    top: 385px;
+    left: 1380px;
+
+    width: 350px;
+}
+
+.assignment--mc {
+    top: 725px;
+    left: 245px;
+
+    width: 220px;
+}
+
+.assignment--music {
+    top: 725px;
+    left: 1050px;
+
+    width: 330px;
+}

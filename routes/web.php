@@ -39,6 +39,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('ministries', MinistryController::class);
 
     Route::resource('schedules', ScheduleController::class);
+
+    Route::view('/poster/preview', 'poster.template')
+    ->name('poster.preview');
         
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

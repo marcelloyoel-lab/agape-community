@@ -16,6 +16,7 @@ class Schedule extends Model
     {
         return [
             'service_date' => 'date',
+            'service_time' => 'datetime:H:i',
             'approved_at' => 'datetime',
             'published_at' => 'datetime',
             'status' => ScheduleStatus::class,

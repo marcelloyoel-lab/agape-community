@@ -38,10 +38,12 @@ Route::middleware('auth')->group(function () {
     )->name('ministries.toggle-status');
     Route::resource('ministries', MinistryController::class);
 
+    Route::get('/schedules/{schedule}/poster', [ScheduleController::class, 'poster'])
+        ->name('schedules.poster');
     Route::resource('schedules', ScheduleController::class);
 
-    Route::view('/poster/preview', 'poster.template')
-    ->name('poster.preview');
+    // Route::view('/poster/preview', 'poster.template')
+    // ->name('poster.preview');
         
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

@@ -15,13 +15,26 @@
 
 <body>
     <main class="poster">
+
+        {{-- Service Date & Time --}}
         <div class="poster__date">
-            <span class="poster__day">SABTU</span>
-            <span class="poster__date-value">25 JULI 2026</span>
+            <span class="poster__day">
+                {{ strtoupper($schedule->service_date->locale('id')->translatedFormat('l')) }}
+            </span>
+
+            <span class="poster__date-value">
+                {{ strtoupper($schedule->service_date->locale('id')->translatedFormat('d F Y')) }}
+            </span>
+
             <span class="poster__separator"></span>
-            <span class="poster__time">15.00</span>
+
+            <span class="poster__time">
+                {{ $schedule->service_time->format('H.i') }}
+            </span>
         </div>
 
+
+        {{-- Timeline --}}
         <div class="timeline" aria-hidden="true">
             <div class="timeline__horizontal"></div>
 
@@ -44,38 +57,70 @@
             <div class="timeline__arrow"></div>
         </div>
 
+
+        {{-- Pelayan Firman --}}
         <section class="assignment assignment--firman">
-            <h2 class="assignment__ministry">FIRMAN</h2>
+            <h2 class="assignment__ministry">
+                FIRMAN
+            </h2>
 
             <ul class="assignment__members">
-                <li>Ka Prilly</li>
+                @foreach ($posterData['firman'] as $assignment)
+                    <li>
+                        {{ $assignment->member->name }}
+                    </li>
+                @endforeach
             </ul>
         </section>
 
+
+        {{-- Multimedia --}}
         <section class="assignment assignment--multimedia">
-            <h2 class="assignment__ministry">MULTIMEDIA</h2>
+            <h2 class="assignment__ministry">
+                MULTIMEDIA
+            </h2>
 
             <ul class="assignment__members">
-                <li>Yohana</li>
+                @foreach ($posterData['multimedia'] as $assignment)
+                    <li>
+                        {{ $assignment->member->name }}
+                    </li>
+                @endforeach
             </ul>
         </section>
 
+
+        {{-- MC --}}
         <section class="assignment assignment--mc">
-            <h2 class="assignment__ministry">MC</h2>
+            <h2 class="assignment__ministry">
+                MC
+            </h2>
 
             <ul class="assignment__members">
-                <li>Afanti</li>
+                @foreach ($posterData['mc'] as $assignment)
+                    <li>
+                        {{ $assignment->member->name }}
+                    </li>
+                @endforeach
             </ul>
         </section>
 
+
+        {{-- Music --}}
         <section class="assignment assignment--music">
-            <h2 class="assignment__ministry">MUSIK</h2>
+            <h2 class="assignment__ministry">
+                MUSIK
+            </h2>
 
             <ul class="assignment__members">
-                <li>Cilly</li>
-                <li>Mario</li>
+                @foreach ($posterData['music'] as $assignment)
+                    <li>
+                        {{ $assignment->member->name }}
+                    </li>
+                @endforeach
             </ul>
         </section>
+
     </main>
 </body>
 

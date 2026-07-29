@@ -11,6 +11,7 @@ use App\Models\Schedule;
 use App\Services\ScheduleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class ScheduleController extends Controller
@@ -193,5 +194,33 @@ class ScheduleController extends Controller
     public function destroy(Schedule $schedule)
     {
         //
+    }
+
+    public function poster(Schedule $schedule)
+    {
+        $schedule->load([
+            'assignments' => fn ($query) => $query->orderBy('display_order'),
+            'assignments.member',
+            'assignments.ministry',
+        ]);
+
+        $assignments = $schedule->assignments->groupBy('ministry.name');
+
+        $posterData = [
+            'mc' => $assignments->get('MC', collect()),
+            'firman' => $assignments->get('Pelayan Firman', collect()),
+            'music' => $assignments->get('Music', collect()),
+            'multimedia' => $assignments->get('Multimedia', collect()),
+        ];
+
+        Log::info('Schedule poster preview viewed.', [
+            'schedule_id' => $schedule->id,
+            'viewed_by' => auth()->id(),
+        ]);
+
+        return view('poster.template', compact(
+            'schedule',
+            'posterData'
+        ));
     }
 }

@@ -61,10 +61,26 @@
                                     </td>
 
                                     <td class="text-center">
-                                        <a href="{{ route('schedules.show', $schedule) }}"
-                                           class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
+                                        <div class="d-flex justify-content-center gap-2">
+                                            {{-- View --}}
+                                            <a href="{{ route('schedules.show', $schedule) }}"
+                                            class="btn btn-sm btn-outline-primary"
+                                            title="View Schedule">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+
+                                            {{-- Edit --}}
+                                            @if (in_array($schedule->status, [
+                                                \App\Enums\ScheduleStatus::DRAFT,
+                                                \App\Enums\ScheduleStatus::REJECTED,
+                                            ], true))
+                                                <a href="{{ route('schedules.edit', $schedule) }}"
+                                                class="btn btn-sm btn-outline-warning"
+                                                title="Edit Schedule">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -78,3 +94,4 @@
 
     </div>
 @endsection
+@vite('resources/assets/js/schedule/index.js')

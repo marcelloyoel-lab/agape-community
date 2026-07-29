@@ -6,9 +6,9 @@
 
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h2 class="mb-1">Create Weekly Schedule</h2>
+                <h2 class="mb-1">Edit Weekly Schedule</h2>
                 <p class="text-muted mb-0">
-                    Select the service date, time, and members for each ministry.
+                    Update the service information and ministry assignments.
                 </p>
             </div>
 
@@ -19,11 +19,12 @@
             </a>
         </div>
 
-        <form action="{{ route('schedules.store') }}"
+        <form action="{{ route('schedules.update', $schedule) }}"
               method="POST"
               id="schedule-form">
 
             @csrf
+            @method('PUT')
 
             {{-- Service Information --}}
             <div class="card shadow-sm mb-4">
@@ -43,10 +44,16 @@
                                 type="date"
                                 name="service_date"
                                 id="service_date"
-                                class="form-control"
-                                value="{{ old('service_date') }}"
+                                class="form-control @error('service_date') is-invalid @enderror"
+                                value="{{ old('service_date', $schedule->service_date->format('Y-m-d')) }}"
                                 required
                             >
+
+                            @error('service_date')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
                         </div>
 
                         <div class="col-md-6">
@@ -58,10 +65,16 @@
                                 type="time"
                                 name="service_time"
                                 id="service_time"
-                                class="form-control"
-                                value="{{ old('service_time') }}"
+                                class="form-control @error('service_time') is-invalid @enderror"
+                                value="{{ old('service_time', substr($schedule->service_time, 0, 5)) }}"
                                 required
                             >
+
+                            @error('service_time')
+                                <div class="invalid-feedback">
+                                    {{ $message }}
+                                </div>
+                            @enderror
                         </div>
 
                     </div>
@@ -75,9 +88,15 @@
                 </div>
 
                 <div class="card-body">
-
                     <div class="row g-4">
+
                         @foreach ($ministries as $ministry)
+                            @php
+                                $selectedMembers = old(
+                                    "assignments.{$ministry->id}",
+                                    $selectedAssignments->get($ministry->id, [])
+                                );
+                            @endphp
 
                             <div class="col-lg-6">
                                 <label
@@ -96,9 +115,11 @@
                                 <select
                                     id="ministry-{{ $ministry->id }}"
                                     name="assignments[{{ $ministry->id }}][]"
-                                    class="form-select member-select"
+                                    class="form-select member-select
+                                        @error("assignments.{$ministry->id}") is-invalid @enderror"
                                     data-placeholder="Select member{{ $ministry->allow_multiple_members ? 's' : '' }}"
                                     @if ($ministry->allow_multiple_members) multiple @endif
+                                    required
                                 >
                                     @unless ($ministry->allow_multiple_members)
                                         <option></option>
@@ -110,7 +131,7 @@
                                             @selected(
                                                 in_array(
                                                     $member->id,
-                                                    old("assignments.{$ministry->id}", [])
+                                                    $selectedMembers
                                                 )
                                             )
                                         >
@@ -124,11 +145,22 @@
                                         You can select more than one member.
                                     </div>
                                 @endif
+
+                                @error("assignments.{$ministry->id}")
+                                    <div class="text-danger small mt-1">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+
+                                @error("assignments.{$ministry->id}.*")
+                                    <div class="text-danger small mt-1">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
                             </div>
-
                         @endforeach
-                    </div>
 
+                    </div>
                 </div>
             </div>
 
@@ -138,9 +170,11 @@
                     Cancel
                 </a>
 
-                <button type="submit" class="btn btn-primary">
+                <button type="submit"
+                        class="btn btn-primary"
+                        id="submit-button">
                     <i class="bi bi-check-lg me-1"></i>
-                    Save Schedule
+                    Update Schedule
                 </button>
             </div>
 
@@ -148,4 +182,4 @@
 
     </div>
 @endsection
-@vite(['resources/assets/js/schedule/create.js'])
+@vite(['resources/assets/js/schedule/edit.js'])

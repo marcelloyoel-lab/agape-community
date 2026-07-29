@@ -59,4 +59,57 @@ class ScheduleService
             throw $exception;
         }
     }
+
+    public function update(
+        Schedule $schedule,
+        array $data,
+        int $editedBy
+    ): Schedule {
+        DB::beginTransaction();
+
+        try {
+            $schedule->update([
+                'service_date' => $data['service_date'],
+                'service_time' => $data['service_time'],
+
+                'status' => $schedule->status === ScheduleStatus::REJECTED
+                    ? ScheduleStatus::DRAFT
+                    : $schedule->status,
+            ]);
+
+            $schedule->assignments()->delete();
+
+            foreach ($data['assignments'] as $ministryId => $memberIds) {
+                foreach ($memberIds as $displayOrder => $memberId) {
+                    $schedule->assignments()->create([
+                        'ministry_id' => $ministryId,
+                        'member_id' => $memberId,
+                        'display_order' => $displayOrder + 1,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            Log::info('Schedule updated successfully.', [
+                'schedule_id' => $schedule->id,
+                'service_date' => $schedule->service_date,
+                'service_time' => $schedule->service_time,
+                'edited_by' => $editedBy,
+            ]);
+
+            return $schedule->refresh();
+
+        } catch (Throwable $e) {
+            DB::rollBack();
+
+            Log::error('Failed to update schedule.', [
+                'schedule_id' => $schedule->id,
+                'edited_by' => $editedBy,
+                'exception' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
+    }
 }

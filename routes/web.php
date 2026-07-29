@@ -39,7 +39,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('ministries', MinistryController::class);
 
     Route::get('/schedules/{schedule}/poster', [ScheduleController::class, 'poster'])
-        ->name('schedules.poster');
+        ->name('schedules.poster'); //For view
+    Route::post('/schedules/{schedule}/poster/generate', [ScheduleController::class, 'generatePoster'])
+    ->name('schedules.poster.generate'); //For generate poster
     Route::resource('schedules', ScheduleController::class);
 
     // Route::view('/poster/preview', 'poster.template')

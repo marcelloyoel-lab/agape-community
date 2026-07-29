@@ -131,5 +131,21 @@
             </div>
         </div>
 
+        <form
+            action="{{ route('schedules.poster.generate', $schedule) }}"
+            method="POST"
+            class="d-block mt-4"
+            id="generatePosterForm"
+        >
+            @csrf
+
+            <button
+                type="submit"
+                class="btn btn-primary"
+            >
+                Generate & Download Poster
+            </button>
+        </form>
+
     </div>
 @endsection

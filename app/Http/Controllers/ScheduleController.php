@@ -196,31 +196,81 @@ class ScheduleController extends Controller
         //
     }
 
+    // public function poster(Schedule $schedule)
+    // {
+    //     $schedule->load([
+    //         'assignments' => fn ($query) => $query->orderBy('display_order'),
+    //         'assignments.member',
+    //         'assignments.ministry',
+    //     ]);
+
+    //     $assignments = $schedule->assignments->groupBy('ministry.name');
+
+    //     $posterData = [
+    //         'mc' => $assignments->get('MC', collect()),
+    //         'firman' => $assignments->get('Pelayan Firman', collect()),
+    //         'music' => $assignments->get('Music', collect()),
+    //         'multimedia' => $assignments->get('Multimedia', collect()),
+    //     ];
+
+    //     Log::info('Schedule poster preview viewed.', [
+    //         'schedule_id' => $schedule->id,
+    //         'viewed_by' => auth()->id(),
+    //     ]);
+
+    //     return view('poster.template', compact(
+    //         'schedule',
+    //         'posterData'
+    //     ));
+    // }
+
     public function poster(Schedule $schedule)
     {
-        $schedule->load([
-            'assignments' => fn ($query) => $query->orderBy('display_order'),
-            'assignments.member',
-            'assignments.ministry',
-        ]);
+        try {
+            $posterData = $this->scheduleService->preparePosterData($schedule);
 
-        $assignments = $schedule->assignments->groupBy('ministry.name');
+            Log::info('Schedule poster preview viewed.', [
+                'schedule_id' => $schedule->id,
+                'viewed_by' => auth()->id(),
+            ]);
 
-        $posterData = [
-            'mc' => $assignments->get('MC', collect()),
-            'firman' => $assignments->get('Pelayan Firman', collect()),
-            'music' => $assignments->get('Music', collect()),
-            'multimedia' => $assignments->get('Multimedia', collect()),
-        ];
+            return view('poster.template', [
+                'schedule' => $schedule,
+                'posterData' => $posterData,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Failed to load schedule poster preview.', [
+                'schedule_id' => $schedule->id,
+                'viewed_by' => auth()->id(),
+                'error' => $e->getMessage(),
+            ]);
 
-        Log::info('Schedule poster preview viewed.', [
-            'schedule_id' => $schedule->id,
-            'viewed_by' => auth()->id(),
-        ]);
+            return redirect()
+                ->route('schedule.show', $schedule)
+                ->with('error', 'Failed to load poster preview.');
+        }
+    }
 
-        return view('poster.template', compact(
-            'schedule',
-            'posterData'
-        ));
+    public function generatePoster(Schedule $schedule)
+    {
+        try {
+            $schedule = $this->scheduleService->generatePoster(
+                $schedule,
+                auth()->id()
+            );
+
+            $posterPath = storage_path(
+                'app/public/'.$schedule->poster_path
+            );
+
+            return response()->download(
+                $posterPath,
+                'jadwal-pelayanan-'.$schedule->service_date->format('Y-m-d').'.png'
+            );
+        } catch (\Throwable $e) {
+            return redirect()
+                ->route('schedules.show', $schedule)
+                ->with('error', 'Failed to generate poster. Please try again.');
+        }
     }
 }

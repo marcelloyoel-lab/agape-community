@@ -7,6 +7,10 @@ use App\Models\Schedule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Str;
+use RuntimeException;
 
 class ScheduleService
 {
@@ -110,6 +114,137 @@ class ScheduleService
             ]);
 
             throw $e;
+        }
+    }
+
+    public function preparePosterData(Schedule $schedule): array
+    {
+        $schedule->load([
+            'assignments' => fn ($query) => $query->orderBy('display_order'),
+            'assignments.member',
+            'assignments.ministry',
+        ]);
+
+        $assignments = $schedule->assignments->groupBy('ministry.name');
+
+        return [
+            'mc' => $assignments->get('MC', collect()),
+            'firman' => $assignments->get('Pelayan Firman', collect()),
+            'music' => $assignments->get('Music', collect()),
+            'multimedia' => $assignments->get('Multimedia', collect()),
+        ];
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function generatePoster(Schedule $schedule, int $generatedBy): Schedule
+    {
+        $posterData = $this->preparePosterData($schedule);
+
+        $filename = sprintf(
+            'schedule-%d-%s.png',
+            $schedule->id,
+            Str::uuid()
+        );
+
+        $posterDirectory = storage_path('app/public/posters');
+        $temporaryDirectory = storage_path('app/poster-temp');
+
+        $posterPath = $posterDirectory.'/'.$filename;
+        $temporaryHtmlPath = $temporaryDirectory.'/'.$filename.'.html';
+
+        try {
+            File::ensureDirectoryExists($posterDirectory);
+            File::ensureDirectoryExists($temporaryDirectory);
+
+            $html = view('poster.template', [
+                'schedule' => $schedule,
+                'posterData' => $posterData,
+            ])->render();
+
+            File::put($temporaryHtmlPath, $html);
+
+            $result = Process::timeout(60)
+                ->path(base_path())
+                ->run([
+                    'node',
+                    'scripts/generate-poster.mjs',
+                    $temporaryHtmlPath,
+                    $posterPath,
+                ]);
+
+            if ($result->failed()) {
+                throw new RuntimeException(
+                    'Playwright failed to generate poster: '.$result->errorOutput()
+                );
+            }
+
+            if (! File::exists($posterPath)) {
+                throw new RuntimeException(
+                    'Poster generation completed but the PNG file was not created.'
+                );
+            }
+
+            DB::beginTransaction();
+
+            try {
+                $oldPosterPath = $schedule->poster_path;
+
+                $schedule->update([
+                    'poster_path' => 'posters/'.$filename,
+                ]);
+
+                DB::commit();
+
+            } catch (Throwable $exception) {
+                DB::rollBack();
+
+                throw $exception;
+            }
+
+            if (
+                $oldPosterPath &&
+                $oldPosterPath !== $schedule->poster_path
+            ) {
+                $oldAbsolutePath = storage_path(
+                    'app/public/'.$oldPosterPath
+                );
+
+                if (File::exists($oldAbsolutePath)) {
+                    File::delete($oldAbsolutePath);
+                }
+            }
+
+            Log::info('Schedule poster generated successfully.', [
+                'schedule_id' => $schedule->id,
+                'poster_path' => $schedule->poster_path,
+                'generated_by' => $generatedBy,
+            ]);
+
+            return $schedule->refresh();
+
+        } catch (Throwable $exception) {
+            /*
+            * If generation/update fails, don't leave the newly generated
+            * poster behind.
+            */
+            if (File::exists($posterPath)) {
+                File::delete($posterPath);
+            }
+
+            Log::error('Failed to generate schedule poster.', [
+                'schedule_id' => $schedule->id,
+                'generated_by' => $generatedBy,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
+
+        } finally {
+            if (File::exists($temporaryHtmlPath)) {
+                File::delete($temporaryHtmlPath);
+            }
         }
     }
 }

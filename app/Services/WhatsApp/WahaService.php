@@ -1,0 +1,65 @@
+<?php
+
+namespace App\Services\WhatsApp;
+
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Client\ConnectionException;
+use RuntimeException;
+
+class WahaService
+{
+    private string $baseUrl;
+
+    private string $apiKey;
+
+    private string $session;
+
+    public function __construct()
+    {
+        $this->baseUrl = rtrim((string) config('services.waha.base_url'), '/');
+        $this->apiKey = (string) config('services.waha.api_key');
+        $this->session = (string) config('services.waha.session', 'default');
+
+        if ($this->baseUrl === '' || $this->apiKey === '') {
+            throw new RuntimeException('WAHA configuration is incomplete.');
+        }
+    }
+
+    private function client(): PendingRequest
+    {
+        return Http::baseUrl($this->baseUrl)
+            ->withHeaders([
+                'X-Api-Key' => $this->apiKey,
+                'Accept' => 'application/json',
+            ])
+            ->connectTimeout(3)
+            ->timeout(10);
+    }
+
+    public function health(): array
+    {
+        try {
+            $response = $this->client()
+                ->get('/api/server/status')
+                ->throw();
+
+            Log::info('WAHA health check successful.', [
+                'status_code' => $response->status(),
+            ]);
+
+            return $response->json() ?? [];
+        } catch (ConnectionException|RequestException $exception) {
+            Log::error('WAHA health check failed.', [
+                'status_code' => $exception instanceof RequestException
+                    ? $exception->response?->status()
+                    : null,
+                'message' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
+        }
+    }
+}

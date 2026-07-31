@@ -11,6 +11,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Services\WhatsApp\WebhookDeduplicationService;
+use App\Services\WhatsApp\BotConversationService;
+use App\Models\User;
 
 class WhatsAppWebhookController extends Controller
 {
@@ -19,6 +21,7 @@ class WhatsAppWebhookController extends Controller
         private readonly WahaService $waha,
         private readonly WebhookDeduplicationService $deduplication,
         private readonly BotSessionService $botSessions,
+        private readonly BotConversationService $conversation,
     ) {
     }
     
@@ -58,6 +61,16 @@ class WhatsAppWebhookController extends Controller
         }
 
         if ($this->botAuth->isAuthenticated($senderId)) {
+            $user = $this->botAuth->user($senderId);
+
+            if (! $user) {
+                Log::warning('Authenticated WhatsApp user could not be resolved.');
+
+                return response()->json([
+                    'status' => 'unauthorized',
+                ], 401);
+            }
+
             $session = $this->botSessions->getOrCreate($senderId);
 
             if ($this->botSessions->isExpired($session)) {
@@ -68,11 +81,19 @@ class WhatsAppWebhookController extends Controller
 
             Log::info('Authenticated WhatsApp message received.', [
                 'bot_session_id' => $session->id,
+                'user_id' => $user->id,
                 'state' => $session->state->value,
             ]);
 
+            $this->conversation->handle(
+                $session,
+                $user,
+                $senderId,
+                $message
+            );
+
             return response()->json([
-                'status' => 'authenticated',
+                'status' => 'processed',
             ]);
         }
 

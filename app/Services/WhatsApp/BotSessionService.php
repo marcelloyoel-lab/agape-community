@@ -107,4 +107,35 @@ class BotSessionService
             ->where('phone_number', $senderId)
             ->first();
     }
+
+    public function update(
+        BotSession $session,
+        array $data
+    ): BotSession {
+        DB::beginTransaction();
+
+        try {
+            $data['last_activity_at'] = now();
+
+            $session->update($data);
+
+            DB::commit();
+
+            Log::info('Bot session updated.', [
+                'bot_session_id' => $session->id,
+                'state' => $session->state->value,
+            ]);
+
+            return $session->refresh();
+        } catch (Throwable $exception) {
+            DB::rollBack();
+
+            Log::error('Failed to update bot session.', [
+                'bot_session_id' => $session->id,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
+        }
+    }
 }

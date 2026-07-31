@@ -62,4 +62,34 @@ class WahaService
             throw $exception;
         }
     }
+
+    public function sendText(string $chatId, string $text): array
+    {
+        try {
+            $response = $this->client()
+                ->post('/api/sendText', [
+                    'session' => $this->session,
+                    'chatId' => $chatId,
+                    'text' => $text,
+                ])
+                ->throw();
+
+            Log::info('WAHA text message sent.', [
+                'chat_id' => $chatId,
+                'status_code' => $response->status(),
+            ]);
+
+            return $response->json() ?? [];
+        } catch (ConnectionException|RequestException $exception) {
+            Log::error('WAHA text message failed.', [
+                'chat_id' => $chatId,
+                'status_code' => $exception instanceof RequestException
+                    ? $exception->response?->status()
+                    : null,
+                'message' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
+        }
+    }
 }

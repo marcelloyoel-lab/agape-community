@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Webhooks;
 
 use App\Http\Controllers\Controller;
 use App\Services\WhatsApp\BotAuthenticationService;
+use App\Services\WhatsApp\BotSessionService;
+use App\Enums\BotState;
 use App\Services\WhatsApp\WahaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +18,7 @@ class WhatsAppWebhookController extends Controller
         private readonly BotAuthenticationService $botAuth,
         private readonly WahaService $waha,
         private readonly WebhookDeduplicationService $deduplication,
+        private readonly BotSessionService $botSessions,
     ) {
     }
     
@@ -55,20 +58,48 @@ class WhatsAppWebhookController extends Controller
         }
 
         if ($this->botAuth->isAuthenticated($senderId)) {
-            Log::info('Authenticated WhatsApp message received.');
+            $session = $this->botSessions->getOrCreate($senderId);
 
-            return response()->json(['status' => 'authenticated']);
+            if ($this->botSessions->isExpired($session)) {
+                $session = $this->botSessions->reset($session);
+            } else {
+                $session = $this->botSessions->touch($session);
+            }
+
+            Log::info('Authenticated WhatsApp message received.', [
+                'bot_session_id' => $session->id,
+                'state' => $session->state->value,
+            ]);
+
+            return response()->json([
+                'status' => 'authenticated',
+            ]);
+        }
+
+        $existingSession = $this->botSessions->find($senderId);
+
+        if ($existingSession && $existingSession->state !== BotState::IDLE) {
+            $this->botSessions->reset($existingSession);
         }
 
         if ($this->botAuth->authenticate($senderId, $message)) {
+            $session = $this->botSessions->getOrCreate($senderId);
+
+            // A new authentication always starts a fresh conversation.
+            $this->botSessions->reset($session);
+
             $this->waha->sendText(
                 $senderId,
                 'Authentication successful. You can now use the bot.'
             );
 
-            Log::info('WhatsApp administrator authenticated.');
+            Log::info('WhatsApp administrator authenticated.', [
+                'bot_session_id' => $session->id,
+            ]);
 
-            return response()->json(['status' => 'authenticated']);
+            return response()->json([
+                'status' => 'authenticated',
+            ]);
         }
 
         if ($this->botAuth->shouldSendAuthPrompt($senderId)) {
@@ -78,6 +109,8 @@ class WhatsAppWebhookController extends Controller
             );
         }
 
-        return response()->json(['status' => 'unauthorized']);
+        return response()->json([
+            'status' => 'unauthorized',
+        ]);
     }
 }

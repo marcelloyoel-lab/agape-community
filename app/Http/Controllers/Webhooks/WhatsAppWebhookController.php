@@ -8,12 +8,14 @@ use App\Services\WhatsApp\WahaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Services\WhatsApp\WebhookDeduplicationService;
 
 class WhatsAppWebhookController extends Controller
 {
     public function __construct(
         private readonly BotAuthenticationService $botAuth,
         private readonly WahaService $waha,
+        private readonly WebhookDeduplicationService $deduplication,
     ) {
     }
     
@@ -33,6 +35,16 @@ class WhatsAppWebhookController extends Controller
 
         if (($payload['fromMe'] ?? false) === true) {
             return response()->json(['status' => 'ignored']);
+        }
+
+        $messageId = $payload['id'] ?? null;
+
+        if (! $messageId) {
+            return response()->json(['status' => 'ignored']);
+        }
+
+        if ($this->deduplication->alreadyProcessed($messageId)) {
+            return response()->json(['status' => 'duplicate']);
         }
 
         $senderId = $payload['from'] ?? null;
@@ -59,10 +71,12 @@ class WhatsAppWebhookController extends Controller
             return response()->json(['status' => 'authenticated']);
         }
 
-        $this->waha->sendText(
-            $senderId,
-            'Authentication required. Send your credentials as email|password.'
-        );
+        if ($this->botAuth->shouldSendAuthPrompt($senderId)) {
+            $this->waha->sendText(
+                $senderId,
+                'Authentication required. Send your credentials as email|password.'
+            );
+        }
 
         return response()->json(['status' => 'unauthorized']);
     }

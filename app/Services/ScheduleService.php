@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Illuminate\Support\Facades\Storage;
 
 class ScheduleService
 {
@@ -46,10 +47,10 @@ class ScheduleService
 
             if ($botSession) {
                 $botSession->update([
-                    'state' => BotState::IDLE,
+                    // 'state' => BotState::IDLE,
                     'schedule_id' => $schedule->id,
-                    'current_ministry_id' => null,
-                    'temp_data' => null,
+                    // 'current_ministry_id' => null,
+                    // 'temp_data' => null,
                     'last_activity_at' => now(),
                 ]);
             }
@@ -159,7 +160,7 @@ class ScheduleService
         $posterData = $this->preparePosterData($schedule);
 
         $filename = sprintf(
-            'schedule-%d-%s.png',
+            'schedule-%d-%s.jpg',
             $schedule->id,
             Str::uuid()
         );
@@ -262,5 +263,40 @@ class ScheduleService
                 File::delete($temporaryHtmlPath);
             }
         }
+    }
+
+    public function approve(Schedule $schedule): Schedule
+    {
+        DB::beginTransaction();
+
+        try {
+            $schedule->update([
+                'status' => ScheduleStatus::APPROVED,
+                'approved_at' => now(),
+            ]);
+
+            DB::commit();
+
+            Log::info('Schedule approved successfully.', [
+                'schedule_id' => $schedule->id,
+            ]);
+
+            return $schedule->refresh();
+        } catch (Throwable $exception) {
+            DB::rollBack();
+
+            Log::error('Failed to approve schedule.', [
+                'schedule_id' => $schedule->id,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
+        }
+    }
+
+    public function posterUrl(Schedule $schedule): string
+    {
+        return rtrim(config('services.waha.public_url'), '/')
+            . Storage::url($schedule->poster_path);
     }
 }

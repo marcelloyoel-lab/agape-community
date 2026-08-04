@@ -9,4 +9,5 @@ enum BotState: string
     case WAITING_SERVICE_TIME = 'waiting_service_time';
     case SELECTING_MINISTRY = 'selecting_ministry';
     case CONFIRM_POSTER = 'confirm_poster';
+    case WAITING_CONFIRMATION = 'waiting_confirmation';
 }

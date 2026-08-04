@@ -3,6 +3,7 @@
 namespace App\Services\WhatsApp;
 
 use App\Enums\BotState;
+use App\Jobs\GeneratePosterPreviewJob;
 use App\Models\BotSession;
 use App\Models\Member;
 use App\Models\Ministry;
@@ -79,6 +80,17 @@ class BotConversationService
 
         if ($session->state === BotState::SELECTING_MINISTRY) {
             $this->handleMemberSelection(
+                $session,
+                $user,
+                $senderId,
+                $message
+            );
+
+            return;
+        }
+
+        if ($session->state === BotState::WAITING_CONFIRMATION) {
+            $this->handleConfirmation(
                 $session,
                 $user,
                 $senderId,
@@ -475,17 +487,27 @@ class BotConversationService
                 $session
             );
 
+            $this->botSessions->update($session, [
+                'schedule_id' => $schedule->id,
+                'state' => BotState::WAITING_CONFIRMATION,
+            ]);
+
+            $this->waha->sendText(
+                $senderId,
+                "⏳ Generating your poster preview...\nPlease wait a moment."
+            );
+
+            GeneratePosterPreviewJob::dispatch(
+                $schedule->id,
+                $senderId,
+                $user->id
+            );
+
             Log::info('Bot schedule completed successfully.', [
                 'bot_session_id' => $session->id,
                 'schedule_id' => $schedule->id,
                 'created_by' => $user->id,
             ]);
-
-            $this->waha->sendText(
-                $senderId,
-                "Schedule created successfully.\n"
-                ."Schedule ID: {$schedule->id}"
-            );
         } catch (Throwable $exception) {
             Log::error('Bot failed to complete schedule.', [
                 'bot_session_id' => $session->id,
@@ -495,8 +517,95 @@ class BotConversationService
 
             $this->waha->sendText(
                 $senderId,
-                'Failed to create the schedule. Please try again.'
+                'Failed to prepare the poster preview. Please try again.'
             );
         }
+    }
+
+    private function handleConfirmation(
+        BotSession $session,
+        User $user,
+        string $senderId,
+        string $message
+    ): void {
+        match (trim($message)) {
+            '1' => $this->confirmPoster(
+                $session,
+                $user,
+                $senderId
+            ),
+
+            '2' => $this->editPoster(
+                $session,
+                $senderId
+            ),
+
+            '3' => $this->cancelPoster(
+                $session,
+                $senderId
+            ),
+
+            default => $this->waha->sendText(
+                $senderId,
+                "Invalid option.\n\nReply with:\n1. Send\n2. Edit\n3. Cancel"
+            ),
+        };
+    }
+
+    private function confirmPoster(
+        BotSession $session,
+        User $user,
+        string $senderId
+    ): void {
+        if (! $session->schedule) {
+            $this->waha->sendText(
+                $senderId,
+                'No schedule is waiting for confirmation. Send !poster to start again.'
+            );
+
+            return;
+        }
+
+        try {
+            $this->scheduleService->approve(
+                $session->schedule
+            );
+
+            $this->botSessions->reset($session);
+
+            $this->waha->sendText(
+                $senderId,
+                "Poster approved successfully.\n"
+                ."It will be published in the next step."
+            );
+        } catch (Throwable $exception) {
+            Log::error('Failed to approve poster.', [
+                'bot_session_id' => $session->id,
+                'schedule_id' => $session->schedule_id,
+                'user_id' => $user->id,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            $this->waha->sendText(
+                $senderId,
+                'Failed to approve the poster. Please try again.'
+            );
+        }
+    }
+
+    private function editPoster(
+        BotSession $session,
+        string $senderId
+    ): void
+    {
+        //
+    }
+
+    private function cancelPoster(
+        BotSession $session,
+        string $senderId
+    ): void
+    {
+        //
     }
 }

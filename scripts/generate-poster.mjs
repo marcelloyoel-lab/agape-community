@@ -40,6 +40,8 @@ try {
 
     await poster.screenshot({
         path: outputPath,
+        type: "jpeg",
+        quality: 95,
     });
 
     console.log(`Poster generated: ${outputPath}`);

@@ -92,4 +92,59 @@ class WahaService
             throw $exception;
         }
     }
+
+    public function sendImage(
+        string $chatId,
+        string $imageUrl,
+        string $filename,
+        ?string $caption = null
+    ): array {
+        Log::info('Sending WhatsApp poster preview.', [
+            'chat_id' => $chatId,
+            'image_url' => $imageUrl,
+        ]);
+        try {
+            Log::info('Calling WAHA /sendImage.');
+            $response = $this->mediaClient()
+                ->post('/api/sendImage', [
+                    'session' => $this->session,
+                    'chatId' => $chatId,
+                    'file' => [
+                        'mimetype' => 'image/jpeg',
+                        'url' => $imageUrl,
+                        'filename' => $filename,
+                    ],
+                    'caption' => $caption,
+                ])
+                ->throw();
+
+            Log::info('WAHA image message sent.', [
+                'chat_id' => $chatId,
+                'status_code' => $response->status(),
+            ]);
+
+            return $response->json() ?? [];
+        } catch (ConnectionException|RequestException $exception) {
+            Log::error('WAHA image message failed.', [
+                'chat_id' => $chatId,
+                'status_code' => $exception instanceof RequestException
+                    ? $exception->response?->status()
+                    : null,
+                'message' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
+        }
+    }
+
+    private function mediaClient(): PendingRequest
+    {
+        return Http::baseUrl($this->baseUrl)
+            ->withHeaders([
+                'X-Api-Key' => $this->apiKey,
+                'Accept' => 'application/json',
+            ])
+            ->connectTimeout(5)
+            ->timeout(60);
+    }
 }

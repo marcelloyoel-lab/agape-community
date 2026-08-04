@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Enums\BotState;
 use App\Enums\ScheduleStatus;
+use App\Models\BotSession;
 use App\Models\Schedule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,8 +19,11 @@ class ScheduleService
     /**
      * @throws Throwable
      */
-    public function create(array $data, int $createdBy): Schedule
-    {
+    public function create(
+        array $data,
+        int $createdBy,
+        ?BotSession $botSession = null
+    ): Schedule {
         DB::beginTransaction();
 
         try {
@@ -39,6 +44,16 @@ class ScheduleService
                 }
             }
 
+            if ($botSession) {
+                $botSession->update([
+                    'state' => BotState::IDLE,
+                    'schedule_id' => $schedule->id,
+                    'current_ministry_id' => null,
+                    'temp_data' => null,
+                    'last_activity_at' => now(),
+                ]);
+            }
+
             DB::commit();
 
             Log::info('Schedule created successfully.', [
@@ -46,10 +61,10 @@ class ScheduleService
                 'service_date' => $schedule->service_date,
                 'service_time' => $schedule->service_time,
                 'created_by' => $createdBy,
+                'bot_session_id' => $botSession?->id,
             ]);
 
             return $schedule;
-
         } catch (Throwable $exception) {
             DB::rollBack();
 
@@ -57,6 +72,7 @@ class ScheduleService
                 'service_date' => $data['service_date'] ?? null,
                 'service_time' => $data['service_time'] ?? null,
                 'created_by' => $createdBy,
+                'bot_session_id' => $botSession?->id,
                 'exception' => $exception->getMessage(),
             ]);
 

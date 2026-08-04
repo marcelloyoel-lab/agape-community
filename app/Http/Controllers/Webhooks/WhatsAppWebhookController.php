@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use App\Services\WhatsApp\WebhookDeduplicationService;
 use App\Services\WhatsApp\BotConversationService;
 use App\Models\User;
+use Throwable;
 
 class WhatsAppWebhookController extends Controller
 {
@@ -85,16 +86,51 @@ class WhatsAppWebhookController extends Controller
                 'state' => $session->state->value,
             ]);
 
-            $this->conversation->handle(
-                $session,
-                $user,
-                $senderId,
-                $message
-            );
+            try {
+                $this->conversation->handle(
+                    $session,
+                    $user,
+                    $senderId,
+                    $message
+                );
 
-            return response()->json([
-                'status' => 'processed',
-            ]);
+                return response()->json([
+                    'status' => 'processed',
+                ]);
+            } catch (Throwable $exception) {
+                Log::error('WhatsApp conversation processing failed.', [
+                    'bot_session_id' => $session->id,
+                    'user_id' => $user->id,
+                    'state' => $session->state->value,
+                    'exception' => $exception->getMessage(),
+                ]);
+
+                try {
+                    $this->botSessions->reset($session);
+                } catch (Throwable $resetException) {
+                    Log::error('Failed to reset bot session after conversation failure.', [
+                        'bot_session_id' => $session->id,
+                        'exception' => $resetException->getMessage(),
+                    ]);
+                }
+
+                try {
+                    $this->waha->sendText(
+                        $senderId,
+                        "Something went wrong and the current process was cancelled.\n"
+                        ."Send !poster to start again."
+                    );
+                } catch (Throwable $sendException) {
+                    Log::error('Failed to send WhatsApp conversation failure message.', [
+                        'bot_session_id' => $session->id,
+                        'exception' => $sendException->getMessage(),
+                    ]);
+                }
+
+                return response()->json([
+                    'status' => 'failed',
+                ]);
+            }
         }
 
         $existingSession = $this->botSessions->find($senderId);

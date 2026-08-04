@@ -28,9 +28,22 @@ class BotConversationService
         string $message
     ): void {
         $message = trim($message);
+        $command = strtolower($message);
 
-        if (strtolower($message) === '!poster') {
-            $this->startPoster($session, $senderId);
+        if ($command === '!cancel') {
+            $this->cancelConversation(
+                $session,
+                $senderId
+            );
+
+            return;
+        }
+
+        if ($command === '!poster') {
+            $this->startPoster(
+                $session,
+                $senderId
+            );
 
             return;
         }
@@ -74,6 +87,31 @@ class BotConversationService
 
             return;
         }
+    }
+
+    private function cancelConversation(
+        BotSession $session,
+        string $senderId
+    ): void {
+        if ($session->state === BotState::IDLE) {
+            $this->waha->sendText(
+                $senderId,
+                'There is no active conversation to cancel.'
+            );
+
+            return;
+        }
+
+        $this->botSessions->reset($session);
+
+        Log::info('Bot conversation cancelled.', [
+            'bot_session_id' => $session->id,
+        ]);
+
+        $this->waha->sendText(
+            $senderId,
+            'Schedule creation cancelled.'
+        );
     }
 
     private function startPoster(
@@ -433,15 +471,9 @@ class BotConversationService
         try {
             $schedule = $this->scheduleService->create(
                 $data,
-                $user->id
+                $user->id,
+                $session
             );
-
-            $this->botSessions->update($session, [
-                'state' => BotState::IDLE,
-                'schedule_id' => $schedule->id,
-                'current_ministry_id' => null,
-                'temp_data' => null,
-            ]);
 
             Log::info('Bot schedule completed successfully.', [
                 'bot_session_id' => $session->id,

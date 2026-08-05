@@ -535,19 +535,14 @@ class BotConversationService
                 $senderId
             ),
 
-            '2' => $this->editPoster(
-                $session,
-                $senderId
-            ),
-
-            '3' => $this->cancelPoster(
+            '2' => $this->cancelPoster(
                 $session,
                 $senderId
             ),
 
             default => $this->waha->sendText(
                 $senderId,
-                "Invalid option.\n\nReply with:\n1. Send\n2. Edit\n3. Cancel"
+                "Invalid option.\n\nReply with:\n1. Send\n2. Cancel"
             ),
         };
     }
@@ -567,9 +562,6 @@ class BotConversationService
         }
 
         try {
-            $this->scheduleService->approve(
-                $session->schedule
-            );
 
             $this->botSessions->reset($session);
 
@@ -604,8 +596,39 @@ class BotConversationService
     private function cancelPoster(
         BotSession $session,
         string $senderId
-    ): void
-    {
-        //
+    ): void {
+        if (! $session->schedule) {
+            $this->waha->sendText(
+                $senderId,
+                'No schedule is waiting for confirmation. Send !poster to start again.'
+            );
+
+            return;
+        }
+
+        try {
+            $this->scheduleService->cancel(
+                $session->schedule
+            );
+
+            $this->botSessions->reset($session);
+
+            $this->waha->sendText(
+                $senderId,
+                "❌ Poster has been cancelled.\n\n"
+                ."You can send !poster to create a new schedule."
+            );
+        } catch (Throwable $exception) {
+            Log::error('Failed to cancel poster.', [
+                'bot_session_id' => $session->id,
+                'schedule_id' => $session->schedule_id,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            $this->waha->sendText(
+                $senderId,
+                'Failed to cancel the poster. Please try again.'
+            );
+        }
     }
 }

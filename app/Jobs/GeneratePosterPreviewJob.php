@@ -43,7 +43,7 @@ class GeneratePosterPreviewJob implements ShouldQueue
             Log::info('Poster URL', [
                 'url' => $scheduleService->posterUrl($schedule),
             ]); 
-            
+
             $user = User::findOrFail($this->userId);
 
             $schedule = $scheduleService->generatePoster(
@@ -52,6 +52,10 @@ class GeneratePosterPreviewJob implements ShouldQueue
             );
 
             $imageUrl = $scheduleService->posterUrl(
+                $schedule
+            );
+
+            $schedule = $scheduleService->markAsGenerated(
                 $schedule
             );
 
@@ -67,8 +71,7 @@ class GeneratePosterPreviewJob implements ShouldQueue
                 "Please review the poster.\n\n"
                 ."Reply with:\n"
                 ."1. Send\n"
-                ."2. Edit\n"
-                ."3. Cancel"
+                ."2. Cancel\n"
             );
 
             Log::info('Poster preview generated successfully.', [
@@ -83,6 +86,19 @@ class GeneratePosterPreviewJob implements ShouldQueue
                 'chat_id' => $this->chatId,
                 'exception' => $exception->getMessage(),
             ]);
+
+            try {
+                $wahaService->sendText(
+                    $this->chatId,
+                    "❌ Failed to generate the poster preview.\n\n"
+                    ."Please send !poster and try again."
+                );
+            } catch (Throwable $sendException) {
+                Log::error('Failed to send failure notification.', [
+                    'chat_id' => $this->chatId,
+                    'exception' => $sendException->getMessage(),
+                ]);
+            }
 
             throw $exception;
         }

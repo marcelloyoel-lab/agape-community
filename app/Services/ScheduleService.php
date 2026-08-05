@@ -93,7 +93,7 @@ class ScheduleService
                 'service_date' => $data['service_date'],
                 'service_time' => $data['service_time'],
 
-                'status' => $schedule->status === ScheduleStatus::REJECTED
+                'status' => $schedule->status === ScheduleStatus::CANCELLED
                     ? ScheduleStatus::DRAFT
                     : $schedule->status,
             ]);
@@ -265,19 +265,19 @@ class ScheduleService
         }
     }
 
-    public function approve(Schedule $schedule): Schedule
-    {
+    public function markAsGenerated(
+        Schedule $schedule
+    ): Schedule {
         DB::beginTransaction();
 
         try {
             $schedule->update([
-                'status' => ScheduleStatus::APPROVED,
-                'approved_at' => now(),
+                'status' => ScheduleStatus::GENERATED,
             ]);
 
             DB::commit();
 
-            Log::info('Schedule approved successfully.', [
+            Log::info('Schedule marked as generated.', [
                 'schedule_id' => $schedule->id,
             ]);
 
@@ -285,7 +285,7 @@ class ScheduleService
         } catch (Throwable $exception) {
             DB::rollBack();
 
-            Log::error('Failed to approve schedule.', [
+            Log::error('Failed to mark schedule as generated.', [
                 'schedule_id' => $schedule->id,
                 'exception' => $exception->getMessage(),
             ]);
@@ -298,5 +298,34 @@ class ScheduleService
     {
         return rtrim(config('services.waha.public_url'), '/')
             . Storage::url($schedule->poster_path);
+    }
+
+    public function cancel(
+        Schedule $schedule
+    ): Schedule {
+        DB::beginTransaction();
+
+        try {
+            $schedule->update([
+                'status' => ScheduleStatus::CANCELLED,
+            ]);
+
+            DB::commit();
+
+            Log::info('Schedule cancelled successfully.', [
+                'schedule_id' => $schedule->id,
+            ]);
+
+            return $schedule->refresh();
+        } catch (Throwable $exception) {
+            DB::rollBack();
+
+            Log::error('Failed to cancel schedule.', [
+                'schedule_id' => $schedule->id,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
+        }
     }
 }

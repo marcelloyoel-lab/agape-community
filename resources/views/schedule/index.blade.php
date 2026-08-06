@@ -72,7 +72,7 @@
                                             {{-- Edit --}}
                                             @if (in_array($schedule->status, [
                                                 \App\Enums\ScheduleStatus::DRAFT,
-                                                \App\Enums\ScheduleStatus::REJECTED,
+                                                \App\Enums\ScheduleStatus::CANCELLED,
                                             ], true))
                                                 <a href="{{ route('schedules.edit', $schedule) }}"
                                                 class="btn btn-sm btn-outline-warning"

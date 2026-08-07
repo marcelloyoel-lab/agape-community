@@ -328,4 +328,38 @@ class ScheduleService
             throw $exception;
         }
     }
+
+    /**
+     * @throws Throwable
+     */
+    public function markAsPublished(
+        Schedule $schedule
+    ): Schedule {
+        DB::beginTransaction();
+
+        try {
+            $schedule->update([
+                'status' => ScheduleStatus::PUBLISHED,
+                'published_at' => now(),
+            ]);
+
+            DB::commit();
+
+            Log::info('Schedule marked as published.', [
+                'schedule_id' => $schedule->id,
+                'published_at' => $schedule->published_at,
+            ]);
+
+            return $schedule->refresh();
+        } catch (Throwable $exception) {
+            DB::rollBack();
+
+            Log::error('Failed to mark schedule as published.', [
+                'schedule_id' => $schedule->id,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
+        }
+    }
 }

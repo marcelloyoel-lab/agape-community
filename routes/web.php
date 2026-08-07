@@ -5,10 +5,15 @@ use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MinistryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ScheduleController;
+use App\Services\WhatsApp\WahaService;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/403', function () {
     abort(403);
+});
+
+Route::get('/waha-groups-test', function (WahaService $waha) {
+    return $waha->testGroups();
 });
 
 Route::get('/', function () {

@@ -28,6 +28,11 @@ class WahaService
         }
     }
 
+    public function groupId(): string
+    {
+        return (string) config('services.waha.group_id');
+    }
+
     private function client(): PendingRequest
     {
         return Http::baseUrl($this->baseUrl)
@@ -99,7 +104,7 @@ class WahaService
         string $filename,
         ?string $caption = null
     ): array {
-        Log::info('Sending WhatsApp poster preview.', [
+        Log::info('Sending WhatsApp image.', [
             'chat_id' => $chatId,
             'image_url' => $imageUrl,
         ]);
@@ -137,6 +142,30 @@ class WahaService
         }
     }
 
+    public function sendImageToGroup(
+        string $imageUrl,
+        string $filename,
+        ?string $caption = null
+    ): array
+    {
+        $groupId = $this->groupId();
+
+        if (blank($groupId)) {
+            throw new RuntimeException('WhatsApp group ID is not configured.');
+        }
+
+        Log::info('Sending WhatsApp image to church group.', [
+            'group_id' => $groupId,
+        ]);
+
+        return $this->sendImage(
+            $groupId,
+            $imageUrl,
+            $filename,
+            $caption
+        );
+    }
+
     private function mediaClient(): PendingRequest
     {
         return Http::baseUrl($this->baseUrl)
@@ -146,5 +175,90 @@ class WahaService
             ])
             ->connectTimeout(5)
             ->timeout(60);
+    }
+
+    /**
+     * @throws ConnectionException
+     * @throws RequestException
+     */
+    public function groups(): array
+    {
+        try {
+            $response = $this->client()
+                ->get('/api/chats', [
+                    'session' => $this->session,
+                ])
+                ->throw();
+
+            Log::info('WAHA groups retrieved successfully.', [
+                'status_code' => $response->status(),
+            ]);
+
+            return collect($response->json() ?? [])
+                ->filter(fn (array $chat) => str_ends_with($chat['id'] ?? '', '@g.us'))
+                ->values()
+                ->all();
+
+        } catch (ConnectionException|RequestException $exception) {
+            Log::error('Failed to retrieve WhatsApp groups.', [
+                'status_code' => $exception instanceof RequestException
+                    ? $exception->response?->status()
+                    : null,
+                'message' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
+        }
+    }
+
+    // Untuk testing
+    public function testGroups(): array
+    {
+        return $this->client()
+            ->get("/api/{$this->session}/groups")
+            ->throw()
+            ->json();
+    }
+
+    /**
+     * @throws ConnectionException
+     * @throws RequestException
+     */
+    public function groupList(): array
+    {
+        try {
+            $response = $this->client()
+                ->get("/api/{$this->session}/groups")
+                ->throw();
+
+            Log::info('WAHA groups retrieved successfully.', [
+                'status_code' => $response->status(),
+            ]);
+
+            return collect($response->json() ?? [])
+            ->map(
+                fn (array $group) => [
+                    'name' => $group['name'],
+                    'id' => $group['id']['_serialized'],
+                ]
+            )
+            ->values()
+            ->all();
+
+        } catch (ConnectionException|RequestException $exception) {
+            Log::error('Failed to retrieve WhatsApp groups.', [
+                'status_code' => $exception instanceof RequestException
+                    ? $exception->response?->status()
+                    : null,
+                'message' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
+        }
+    }
+
+    public function isGroupChat(string $chatId): bool
+    {
+        return str_ends_with($chatId, '@g.us');
     }
 }

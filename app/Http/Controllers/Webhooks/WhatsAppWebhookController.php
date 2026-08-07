@@ -61,6 +61,17 @@ class WhatsAppWebhookController extends Controller
             return response()->json(['status' => 'ignored']);
         }
 
+        if ($this->waha->isGroupChat($senderId)) {
+                Log::info('Ignoring WhatsApp group message.', [
+                    'chat_id' => $senderId,
+                    'message_id' => $messageId,
+                ]);
+
+                return response()->json([
+                    'status' => 'ignored_group',
+                ]);
+            }
+
         if ($this->botAuth->isAuthenticated($senderId)) {
             $user = $this->botAuth->user($senderId);
 

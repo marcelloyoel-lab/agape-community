@@ -41,6 +41,7 @@ return [
         'session' => env('WAHA_SESSION', 'default'),
         'webhook_key' => env('WAHA_WEBHOOK_KEY'),
         'public_url' => env('WAHA_PUBLIC_URL', env('APP_URL')),
+        'group_id' => env('WAHA_GROUP_ID'),
     ],
 
 ];

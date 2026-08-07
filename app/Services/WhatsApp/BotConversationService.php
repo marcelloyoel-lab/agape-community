@@ -4,6 +4,7 @@ namespace App\Services\WhatsApp;
 
 use App\Enums\BotState;
 use App\Jobs\GeneratePosterPreviewJob;
+use App\Jobs\PublishPosterToGroupJob;
 use App\Models\BotSession;
 use App\Models\Member;
 use App\Models\Ministry;
@@ -562,16 +563,26 @@ class BotConversationService
         }
 
         try {
+            PublishPosterToGroupJob::dispatch(
+                $session->schedule->id,
+                $senderId
+            );
 
             $this->botSessions->reset($session);
 
             $this->waha->sendText(
                 $senderId,
-                "Poster approved successfully.\n"
-                ."It will be published in the next step."
+                "⏳ Publishing your poster to the church WhatsApp group...\n\n"
+                ."You'll receive another message once the publication has completed."
             );
+
+            Log::info('Poster publish job dispatched.', [
+                'bot_session_id' => $session->id,
+                'schedule_id' => $session->schedule_id,
+                'user_id' => $user->id,
+            ]);
         } catch (Throwable $exception) {
-            Log::error('Failed to approve poster.', [
+            Log::error('Failed to dispatch poster publish job.', [
                 'bot_session_id' => $session->id,
                 'schedule_id' => $session->schedule_id,
                 'user_id' => $user->id,
@@ -580,7 +591,7 @@ class BotConversationService
 
             $this->waha->sendText(
                 $senderId,
-                'Failed to approve the poster. Please try again.'
+                'Failed to publish the poster. Please try again.'
             );
         }
     }
